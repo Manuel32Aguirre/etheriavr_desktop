@@ -17,7 +17,7 @@ class MidiManager:
     def start_listening(self):
         inputs = mido.get_input_names()
         if not inputs:
-            print("[!] ERROR: No se encontró ningún dispositivo MIDI. ¡Conecta el teclado, Víctor!")
+            print("[!] ERROR: No se encontró ningún dispositivo MIDI. ¡Conecta el teclado!")
             return
 
         device_name = inputs[0]
@@ -48,7 +48,6 @@ class MidiManager:
                     # --- Lógica del Pedal con Inversión de Polaridad ---
                     elif msg.type == 'control_change' and msg.control == 64:
                         # Invertimos el valor: 127 - valor_recibido
-                        # Si recibes 0 (pisado en tu caso), mandamos 127 (ON)
                         val_invertido = 127 - msg.value 
                         
                         payload = f"cc|64|{val_invertido}|0|{self.packet_count}|{t_rel:.4f}"
