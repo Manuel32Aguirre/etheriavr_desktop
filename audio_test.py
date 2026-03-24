@@ -4,9 +4,9 @@ import numpy as np
 DEVICE_INDEX = 34
 SAMPLE_RATE = 48000
 FRAME_SIZE = 1024
-THRESHOLD = 0.15
+THRESHOLD = 0.08
 MIN_FREQ = 80
-MAX_FREQ = 600
+MAX_FREQ = 1200
 previous_pitch = -1
 last_valid_pitch = -1
 drop_frames = 0
