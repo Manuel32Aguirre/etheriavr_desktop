@@ -1,7 +1,7 @@
 import sounddevice as sd
 import numpy as np
 
-DEVICE_INDEX = 34
+DEVICE_INDEX = 0
 SAMPLE_RATE = 48000
 FRAME_SIZE = 1024
 THRESHOLD = 0.08

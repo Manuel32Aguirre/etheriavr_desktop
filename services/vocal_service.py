@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DEVICE_INDEX = 34
+DEVICE_INDEX = 0
 SAMPLE_RATE = 48000
 FRAME_SIZE = 1024
 THRESHOLD = 0.15
@@ -175,7 +175,7 @@ class VocalManager:
     # -------------------- Audio callback --------------------
 
     def audio_callback(self, indata, frames, time_info, status):
-        audio = indata[:, 0]
+        audio = np.mean(indata, axis=1)
         energy = np.mean(audio ** 2)
 
         if energy < 0.0005:
