@@ -13,7 +13,7 @@ BANNER = """
 def run():
     print(BANNER)
     
-    mode=1; #0 para midi, 1 para canto    
+    mode=0; #0 para midi, 1 para canto    
     
     # 1. Fase de Descubrimiento (Escucha el "grito" del Quest)
     discovery = DiscoveryService()
