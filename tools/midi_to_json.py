@@ -1,7 +1,7 @@
 import pretty_midi
 import json
 
-midi_file = "tools/take_on_me_vocal.mid"
+midi_file = "dreamLittleDream_Midi.mid"
 
 pm = pretty_midi.PrettyMIDI(midi_file)
 
@@ -36,11 +36,11 @@ for note in notes_by_time.values():
     })
 
 song = {
-    "songName": "Take On Me",
+    "songName": "Boulevard Of Broken Dreams",
     "notes": notes
 }
 
-with open("song_take_on_me.json", "w") as f:
+with open("dream_a_little_dream.json", "w") as f:
     json.dump(song, f, indent=4)
 
 print("JSON generado")
