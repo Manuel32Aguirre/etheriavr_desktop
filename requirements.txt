@@ -1,4 +1,6 @@
 mido
+python-rtmidi
+pygame
 python-dotenv
 sounddevice
 numpy

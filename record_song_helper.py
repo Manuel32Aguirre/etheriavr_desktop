@@ -17,6 +17,8 @@ import numpy as np
 # Configuración
 BACKGROUND_AUDIO = "PianoSongs/background song/test_song.mp3"  # Música de fondo
 NOTES_FOLDER = "PianoSongs/notes"  # Carpeta con sonidos de notas
+PIANO_VOLUME = 0.8
+AUDIO_FILE_VOLUME = 0.7
 ACCORDION_THRESHOLD = 0.02  # 20ms para detectar acordes (más sensible)
 TREBLE_CLEF_THRESHOLD = 60  # C4 - notas >= 60 = clave de sol
 BASS_CLEF_THRESHOLD = 59    # B3 - notas < 60 = clave de fa
@@ -112,7 +114,7 @@ class SongRecorder:
     def countdown(self):
         """Cuenta regresiva 3, 2, 1, bip"""
         print("\n" + "="*60)
-        print(f"PREPARÁNDOSE PARA GRABAR (BPM: {self.bpm})...")
+        print("PREPARÁNDOSE PARA GRABAR...")
         print("="*60)
         
         for i in range(3, 0, -1):
@@ -296,26 +298,16 @@ class SongRecorder:
         }
     
     def generate_json(self):
-        """Genera el JSON con todas las notas/acordes"""
+        """Genera el JSON final en el formato que consume el juego"""
         # Detectar acordes
         chords = self.detect_chords()
-        
-        # Separar por clave
-        treble_notes = [c for c in chords if c['clef'] == 'treble']
-        bass_notes = [c for c in chords if c['clef'] == 'bass']
-        
-        # Estrutura final
+
+        # Formato esperado por el juego
         song_data = {
-            'song_name': self.output_name,
-            'audio_file': self.audio_path,
-            'duration': round(self.song_duration, 2),
-            'recorded_duration': round(time.perf_counter() - self.start_time, 2),
+            'audio_file': self.audio_path.replace('\\', '/'),
+            'piano_volume': PIANO_VOLUME,
+            'audio_file_volume': AUDIO_FILE_VOLUME,
             'all_notes': chords,
-            'treble_clef': treble_notes,
-            'bass_clef': bass_notes,
-            'total_notes': len(chords),
-            'total_chords': sum(1 for c in chords if c['is_chord']),
-            'recorded_at': datetime.now().isoformat()
         }
         
         return song_data
@@ -356,11 +348,9 @@ class SongRecorder:
         
         audio_thread = Thread(target=self.play_audio_thread, daemon=True)
         midi_thread = Thread(target=self.midi_input_thread, args=(device_name,), daemon=True)
-        metronome = Thread(target=self.metronome_thread, daemon=True)
         
         audio_thread.start()
         midi_thread.start()
-        metronome.start()
         
         # Loop principal esperando input o fin
         print("\n📝 GRABANDO... (Presiona ESPACIO para detener)")
@@ -403,26 +393,39 @@ def main():
     print("🎵 ETHERIAVR - GRABADOR DE CANCIONES MIDI")
     print("="*60)
     
-    # Configuración
-    audio_file = BACKGROUND_AUDIO
-    song_name = input("\n📝 Nombre de la canción (ej: 'take_on_me'): ").strip()
-    
-    if not song_name:
-        song_name = "test_song"
-    
-    # Preguntar por BPM
-    bpm_input = input("\n⏱️  BPM (tempo, ej: 120) [default: 120]: ").strip()
-    try:
-        bpm = int(bpm_input) if bpm_input else 120
-        if bpm < 40 or bpm > 240:
-            print("[!] BPM debe estar entre 40 y 240, usando 120")
-            bpm = 120
-    except ValueError:
-        print("[!] BPM inválido, usando 120")
-        bpm = 120
-    
+    # Solo pedir el nombre del MP3 de fondo
+    default_audio_name = Path(BACKGROUND_AUDIO).name
+    audio_name = input(
+        f"\n🎧 Nombre del MP3 de fondo (ej: test_song.mp3) [default: {default_audio_name}]: "
+    ).strip()
+
+    if not audio_name:
+        audio_name = default_audio_name
+
+    # Si el usuario pasa una ruta completa o relativa, se usa tal cual.
+    # Si solo pasa nombre de archivo, se intenta en carpetas conocidas.
+    if os.path.dirname(audio_name):
+        audio_file = audio_name
+    else:
+        candidate_paths = [
+            os.path.join("PianoSongs", "BackgroundMusic", audio_name),
+            os.path.join("PianoSongs", "background song", audio_name),
+        ]
+
+        audio_file = candidate_paths[0]
+        for path in candidate_paths:
+            if os.path.exists(path):
+                audio_file = path
+                break
+
+    output_name = input(
+        "\n📝 Nombre del JSON de salida (sin .json, ej: thescientist): "
+    ).strip()
+    if not output_name:
+        output_name = Path(audio_name).stem or "test_song"
+
     # Crear grabador
-    recorder = SongRecorder(audio_path=audio_file, output_name=song_name, bpm=bpm)
+    recorder = SongRecorder(audio_path=audio_file, output_name=output_name)
     
     # Grabar
     if recorder.record():
@@ -433,13 +436,11 @@ def main():
         print("\n" + "="*60)
         print("📊 RESUMEN DE GRABACIÓN")
         print("="*60)
-        print(f"Canción: {song_data['song_name']}")
-        print(f"Duración audio: {song_data['duration']:.2f}s")
-        print(f"Duración grabada: {song_data['recorded_duration']:.2f}s")
-        print(f"Total de notas/acordes: {song_data['total_notes']}")
-        print(f"Acordes detectados: {song_data['total_chords']}")
-        print(f"Notas clave de Sol: {len(song_data['treble_clef'])}")
-        print(f"Notas clave de Fa: {len(song_data['bass_clef'])}")
+        print(f"Audio de fondo: {song_data['audio_file']}")
+        print(f"Piano volume: {song_data['piano_volume']}")
+        print(f"Audio file volume: {song_data['audio_file_volume']}")
+        print(f"Total de notas/acordes: {len(song_data['all_notes'])}")
+        print(f"Acordes detectados: {sum(1 for n in song_data['all_notes'] if n['is_chord'])}")
         
         # Mostrar algunas notas
         if song_data['all_notes']:
